@@ -1,45 +1,50 @@
 import streamlit as st
 import yfinance as yf
-from chatterbot import ChatBot
-from chatterbot.trainers import ChatterBotCorpusTrainer
+from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
 
-# Inicializar el chatbot
-chatbot = ChatBot('Malicia')
-trainer = ChatterBotCorpusTrainer(chatbot)
-trainer.train('chatterbot.corpus.spanish')  # Entrena el chatbot en español
+# Initialize the Streamlit app
+st.title("Malicia - Your Stock Chatbot")
 
+# Initialize the model and tokenizer
+@st.cache_resource
+def load_model():
+    model_name = "facebook/blenderbot-400M-distill"  # Adjust to a compatible model
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    chatbot = pipeline("conversational", model=model, tokenizer=tokenizer)
+    return chatbot
+
+chatbot = load_model()
+
+# Function to fetch stock data
 def fetch_stock_data(ticker):
-    """Obtiene datos de acciones usando yfinance"""
+    """Fetch stock data using yfinance"""
     try:
         stock = yf.Ticker(ticker)
-        data = stock.history(period="1mo")  # Obtiene datos del último mes
+        data = stock.history(period="1d")
         return data
     except Exception as e:
-        return f"Error al obtener datos: {e}"
+        st.error(f"Error fetching data for ticker {ticker}: {e}")
+        return None
 
-def generate_response(user_input):
-    """Genera una respuesta del chatbot"""
-    response = chatbot.get_response(user_input)
-    return response
+# Sidebar for user input
+st.sidebar.header("User Input")
+ticker = st.sidebar.text_input("Enter stock ticker (e.g., AAPL):").upper()
+user_input = st.sidebar.text_area("Your message:")
 
-def main():
-    st.title("Malicia - ChatBot Financiero")
+# Display stock data
+if ticker:
+    data = fetch_stock_data(ticker)
+    if data is not None:
+        st.write(f"### Data for {ticker}")
+        st.dataframe(data)
 
-    st.sidebar.header("Configuración")
-    ticker = st.sidebar.text_input("Ingrese el ticker de la acción (por ejemplo, AAPL)")
+# Handle chatbot interaction
+if user_input:
+    response = chatbot(user_input)
+    st.write(f"### Chatbot Response")
+    st.write(response[0]['generated_text'])
 
-    user_input = st.text_input("Hable con Malicia:")
-
-    if st.button("Obtener Datos de Acción"):
-        if ticker:
-            data = fetch_stock_data(ticker)
-            st.write(data)
-        else:
-            st.write("Por favor, ingrese un ticker.")
-
-    if user_input:
-        response = generate_response(user_input)
-        st.write("Malicia dice:", response)
-
+# Run Streamlit app
 if __name__ == "__main__":
-    main()
+    st.write("Use the sidebar to interact with Malicia!")
