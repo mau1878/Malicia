@@ -1,3 +1,6 @@
-yfinance
 streamlit
+yfinance
+transformers
 chatterbot
+chatterbot_corpus
+pandas
