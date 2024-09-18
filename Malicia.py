@@ -1,50 +1,59 @@
 import streamlit as st
+from streamlit_chat import message
 import yfinance as yf
-from transformers import pipeline, AutoModelForCausalLM, AutoTokenizer
 
-# Initialize the Streamlit app
-st.title("Malicia - Your Stock Chatbot")
+# Create a placeholder for chat history
+if 'history' not in st.session_state:
+    st.session_state.history = []
 
-# Initialize the model and tokenizer
-@st.cache_resource
-def load_model():
-    model_name = "facebook/blenderbot-400M-distill"  # Adjust to a compatible model
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    chatbot = pipeline("conversational", model=model, tokenizer=tokenizer)
-    return chatbot
-
-chatbot = load_model()
-
-# Function to fetch stock data
-def fetch_stock_data(ticker):
-    """Fetch stock data using yfinance"""
+# Function to fetch stock information
+def get_stock_info(ticker):
     try:
         stock = yf.Ticker(ticker)
-        data = stock.history(period="1d")
-        return data
+        info = stock.info
+        return (
+            f"**{info['shortName']} ({info['symbol']})**\n"
+            f"Precio: ${info['regularMarketPrice']}\n"
+            f"Capitalización de mercado: {info['marketCap']}\n"
+            f"Relación P/E: {info['forwardEps']}\n"
+            f"Rendimiento de dividendos: {info['dividendYield']*100:.2f}%\n"
+        )
     except Exception as e:
-        st.error(f"Error fetching data for ticker {ticker}: {e}")
-        return None
+        return f"Lo siento, no pude obtener información para {ticker}. Error: {str(e)}"
 
-# Sidebar for user input
-st.sidebar.header("User Input")
-ticker = st.sidebar.text_input("Enter stock ticker (e.g., AAPL):").upper()
-user_input = st.sidebar.text_area("Your message:")
+# Function to handle chatbot response
+def get_chatbot_response(user_input):
+    if user_input.startswith("acción:"):
+        ticker = user_input.split(":", 1)[1].strip().upper()
+        return get_stock_info(ticker)
+    elif "hola" in user_input.lower():
+        return "¡Hola! Soy Malicia. ¿Qué querés saber sobre acciones hoy?"
+    elif "gracias" in user_input.lower():
+        return "¡De nada! Si necesitás más información, acá estoy para ayudarte."
+    elif "che" in user_input.lower():
+        return "Che, mirá esto: Para información sobre acciones, empezá tu mensaje con 'acción:'."
+    else:
+        return (
+            "Dale, preguntame algo sobre acciones. "
+            "Podés empezar tu mensaje con 'acción:'. Por ejemplo, 'acción: AAPL'."
+        )
 
-# Display stock data
-if ticker:
-    data = fetch_stock_data(ticker)
-    if data is not None:
-        st.write(f"### Data for {ticker}")
-        st.dataframe(data)
+# Display chat history
+for chat in st.session_state.history:
+    message(chat['text'], is_user=chat['is_user'])
 
-# Handle chatbot interaction
+# Input box for user to type message
+user_input = st.text_input("Vos:", key="user_input")
+
 if user_input:
-    response = chatbot(user_input)
-    st.write(f"### Chatbot Response")
-    st.write(response[0]['generated_text'])
-
-# Run Streamlit app
-if __name__ == "__main__":
-    st.write("Use the sidebar to interact with Malicia!")
+    # Add user message to chat history
+    st.session_state.history.append({"text": f"Vos: {user_input}", "is_user": True})
+    
+    # Get chatbot response
+    bot_response = get_chatbot_response(user_input)
+    
+    # Add chatbot response to chat history
+    st.session_state.history.append({"text": f"Malicia: {bot_response}", "is_user": False})
+    
+    # Clear input box
+    st.text_input("Vos:", value="", key="user_input")
