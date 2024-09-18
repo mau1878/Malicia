@@ -55,5 +55,8 @@ if user_input:
     # Add chatbot response to chat history
     st.session_state.history.append({"text": f"Malicia: {bot_response}", "is_user": False})
     
-    # Clear input box
-    st.text_input("Vos:", value="", key="user_input")
+    # Clear the input box
+    st.session_state.user_input = ""  # Use session state to clear input
+
+# Set the value of the input box based on session state
+st.text_input("Vos:", value=st.session_state.get('user_input', ''), key="user_input")
