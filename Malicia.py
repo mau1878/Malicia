@@ -43,7 +43,7 @@ for chat in st.session_state.history:
     message(chat['text'], is_user=chat['is_user'])
 
 # Input box for user to type message
-user_input = st.text_input("Vos:", key="user_input")
+user_input = st.text_input("Vos:", key="user_input_key")
 
 if user_input:
     # Add user message to chat history
@@ -55,8 +55,8 @@ if user_input:
     # Add chatbot response to chat history
     st.session_state.history.append({"text": f"Malicia: {bot_response}", "is_user": False})
     
-    # Clear the input box
-    st.session_state.user_input = ""  # Use session state to clear input
+    # Clear the input box by updating the session state
+    st.session_state.user_input_key = ""  # Ensure the key used for input box matches
 
-# Set the value of the input box based on session state
-st.text_input("Vos:", value=st.session_state.get('user_input', ''), key="user_input")
+# Optionally, you can ensure the input box shows the cleared value
+st.text_input("Vos:", value=st.session_state.get('user_input_key', ''), key="user_input_key")
