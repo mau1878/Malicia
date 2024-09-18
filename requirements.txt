@@ -1,6 +1,5 @@
 streamlit
 yfinance
 transformers
-chatterbot
-chatterbot_corpus
+torch
 pandas
