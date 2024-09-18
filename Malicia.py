@@ -1,9 +1,12 @@
 import streamlit as st
 import yfinance as yf
-from transformers import pipeline
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
 
-# Inicializar el modelo de conversación
-chatbot = pipeline('conversational', model='facebook/blenderbot-400M-distill')
+# Inicializar el chatbot
+chatbot = ChatBot('Malicia')
+trainer = ChatterBotCorpusTrainer(chatbot)
+trainer.train('chatterbot.corpus.spanish')  # Entrena el chatbot en español
 
 def fetch_stock_data(ticker):
     """Obtiene datos de acciones usando yfinance"""
@@ -16,7 +19,8 @@ def fetch_stock_data(ticker):
 
 def generate_response(user_input):
     """Genera una respuesta del chatbot"""
-    return chatbot(user_input)[0]['generated_text']
+    response = chatbot.get_response(user_input)
+    return response
 
 def main():
     st.title("Malicia - ChatBot Financiero")
