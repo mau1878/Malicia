@@ -6,6 +6,10 @@ import yfinance as yf
 if 'history' not in st.session_state:
     st.session_state.history = []
 
+# Initialize session state for user input
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ''
+
 # Function to fetch stock information
 def get_stock_info(ticker):
     try:
@@ -43,7 +47,7 @@ for chat in st.session_state.history:
     message(chat['text'], is_user=chat['is_user'])
 
 # Input box for user to type message
-user_input = st.text_input("Vos:", key="user_input_key")
+user_input = st.text_input("Vos:", value=st.session_state.user_input, key="user_input_key")
 
 if user_input:
     # Add user message to chat history
@@ -56,7 +60,7 @@ if user_input:
     st.session_state.history.append({"text": f"Malicia: {bot_response}", "is_user": False})
     
     # Clear the input box by updating the session state
-    st.session_state.user_input_key = ""  # Ensure the key used for input box matches
+    st.session_state.user_input = ""  # Reset the value of user input
 
 # Optionally, you can ensure the input box shows the cleared value
-st.text_input("Vos:", value=st.session_state.get('user_input_key', ''), key="user_input_key")
+# The text input field is updated as part of the Streamlit rerun
